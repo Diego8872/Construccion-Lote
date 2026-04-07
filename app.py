@@ -434,14 +434,31 @@ def extraer_items_wartsila(texto_pdf):
 
     return items
 
-def extraer_items_pdf(pdf_bytes, proveedor_detectado=None):
-    """Extrae texto del PDF y detecta el tipo de factura."""
+def extraer_texto_pdf(pdf_bytes):
+    """Extrae texto del PDF. Si está vacío usa OCR como fallback."""
     texto = ""
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
             t = page.extract_text()
             if t:
                 texto += t + "\n"
+    # Si no hay texto suficiente, intentar OCR
+    if len(texto.strip()) < 50:
+        try:
+            import pytesseract
+            from pdf2image import convert_from_bytes
+            images = convert_from_bytes(pdf_bytes, dpi=250)
+            for img in images:
+                t = pytesseract.image_to_string(img, lang="eng+spa")
+                if t:
+                    texto += t + "\n"
+        except Exception as e:
+            pass
+    return texto
+
+def extraer_items_pdf(pdf_bytes, proveedor_detectado=None):
+    """Extrae texto del PDF y detecta el tipo de factura."""
+    texto = extraer_texto_pdf(pdf_bytes)
 
     # Detectar tipo de factura
     if "REFI CLI" in texto or "HCI" in texto.upper():
