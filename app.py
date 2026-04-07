@@ -273,30 +273,41 @@ def extraer_datos_factura_hci(texto_pdf):
     return moneda, origen_factura, procedencia_factura
 
 def extraer_items_natura(texto_pdf):
-    """Extrae ítems de factura Natura (formato: MATERIAL VENTA CANTIDAD ...)"""
+    """
+    Extrae ítems de factura Natura.
+    Formato real de cada línea:
+    50293720 1.050,000 KGIsoamyl Laurate... 1.050,000 13.272,66 13.936.293,00
+    487685 210,000 KG Dimethicone... 210,000 64.107,54 13.462.583,40
+    50443307 9000 PC Valvula Avon... 126,000 268,79 2.419.110,00
+    """
     items = []
     lineas = texto_pdf.split('\n')
-
-    # Detectar moneda
-    moneda = "ARS"
-    for l in lineas:
-        if "Currency" in l: moneda = "USD"
-        if "ARS" in l and "TOTAL" in l: moneda = "ARS"
-
-    # Origen general
-    origen = 203  # BRASIL por defecto para Natura
+    origen = 203
     procedencia = 203
+    moneda = "ARS"
 
-    # Extraer ítems - patrón: código_material cantidad unidad descripción
-    patron_item = re.compile(
-        r'^(\d{5,8})\s+([\d.,]+)\s+(KG|G|PC|MT|L|LT)\s+(.+?)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)',
+    # Patrón: codigo cantidad UNIDAD(pegada o no)descripcion peso unitario total
+    # La unidad puede estar pegada a la descripción (KGIsoamyl) o separada (KG Dimethicone)
+    patron = re.compile(
+        r'^(\d{5,8})\s+([\d.,]+)\s+(KG|G|PC|MT|L|LT|M)\s*(.+?)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s*$',
         re.IGNORECASE
     )
 
     for l in lineas:
-        m = patron_item.match(l.strip())
+        l = l.strip()
+        # Saltar líneas de subtotal (contienen NCM, NALADI, guiones)
+        if "NCM" in l or "NALADI" in l or l.startswith("---") or l.startswith("===="):
+            continue
+        # Saltar líneas de volúmenes y pallets
+        if any(skip in l for skip in ["VOLUMES", "Pallet", "PESO NETO", "PESO BRUTO",
+                                        "CANTIDAD CAJAS", "TOTAL", "FLETE", "SEGURO",
+                                        "MEDIDA", "CONDICIÓN", "OBSERVACIÓN", "MARCA",
+                                        "IMPORTADOR", "RECEPTOR", "BENEFICIARIO"]):
+            continue
+
+        m = patron.match(l)
         if m:
-            codigo = m.group(1)
+            codigo = m.group(1).strip()
             cantidad_raw = m.group(2)
             unidad_raw = m.group(3).upper()
             descripcion = m.group(4).strip()
@@ -309,6 +320,10 @@ def extraer_items_natura(texto_pdf):
             unitario = limpiar_numero(ars_unit)
             total = limpiar_numero(ars_total)
             unidad_cod = get_codigo_unidad(unidad_raw)
+
+            # Calcular unitario si no viene (para ítems sin precio unitario explícito)
+            if unitario == 0 and cantidad > 0:
+                unitario = round(total / cantidad, 2)
 
             items.append({
                 "codigo": codigo,
