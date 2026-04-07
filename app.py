@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 import pandas as pd
 import openpyxl
 import xlrd
@@ -478,23 +479,39 @@ def extraer_items_aesa_desde_excel(marcas_bytes):
     return items
 
 def extraer_texto_pdf(pdf_bytes):
-    """Extrae texto del PDF. Si está vacío usa OCR como fallback."""
+    """Extrae texto del PDF. Si está vacío usa Groq Vision como fallback."""
     texto = ""
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
             t = page.extract_text()
             if t:
                 texto += t + "\n"
-    # Si no hay texto suficiente, intentar OCR
+    # Si no hay texto suficiente, usar Groq Vision
     if len(texto.strip()) < 50:
         try:
-            import pytesseract
             from pdf2image import convert_from_bytes
-            images = convert_from_bytes(pdf_bytes, dpi=250)
+            from groq import Groq
+            groq_key = st.secrets.get("GROQ_API_KEY", "")
+            if not groq_key:
+                return texto
+            client = Groq(api_key=groq_key)
+            images = convert_from_bytes(pdf_bytes, dpi=200)
             for img in images:
-                t = pytesseract.image_to_string(img, lang="eng+spa")
-                if t:
-                    texto += t + "\n"
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=90)
+                img_b64 = base64.b64encode(buf.getvalue()).decode()
+                response = client.chat.completions.create(
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}},
+                            {"type": "text", "text": "Transcribí el texto completo de esta factura comercial, respetando la estructura de las tablas. Incluí todos los números, códigos y descripciones exactamente como aparecen."}
+                        ]
+                    }],
+                    max_tokens=4000
+                )
+                texto += response.choices[0].message.content + "\n"
         except Exception as e:
             pass
     return texto
