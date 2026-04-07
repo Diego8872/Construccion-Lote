@@ -434,6 +434,49 @@ def extraer_items_wartsila(texto_pdf):
 
     return items
 
+
+def extraer_items_aesa_desde_excel(marcas_bytes):
+    """
+    Para AESA con PDF escaneado: extrae ítems directamente del Excel de marcas
+    (solapa Pos) que tiene toda la info de la factura.
+    Solo se usa cuando el PDF no tiene texto extraíble.
+    """
+    items = []
+    try:
+        df = pd.read_excel(io.BytesIO(marcas_bytes), sheet_name="Pos", dtype=str, skiprows=3)
+        df = df[df["Pos"].str.match(r"^\d+$", na=False)].copy()
+
+        for _, row in df.iterrows():
+            cod = str(row.get("Código SAP del Material", "")).strip()
+            desc = str(row.get("Descripción", "")).strip().replace("\n", " ")
+            cant = limpiar_numero(row.get("Cantidad", 0))
+            unid_raw = str(row.get("Unidad", "UNI")).strip().upper()
+            unit = limpiar_numero(row.get("Precio Unitario de Posición", 0))
+            total = limpiar_numero(row.get("Precio Total de Posición", 0))
+            peso = limpiar_numero(row.get("Peso Neto Total de Posición (kg)", 0))
+            origen_raw = str(row.get("Origen", "brasil")).strip()
+            origen = get_codigo_pais(origen_raw) or 203
+
+            if not cod or cant == 0:
+                continue
+
+            items.append({
+                "codigo": cod,
+                "descripcion": desc,
+                "cantidad": cant,
+                "unidad_cod": get_codigo_unidad(unid_raw),
+                "unidad_raw": unid_raw,
+                "peso_neto": peso,
+                "unitario": unit,
+                "total": total,
+                "origen": origen,
+                "procedencia": origen,
+                "moneda": "USD",
+            })
+    except Exception as e:
+        pass
+    return items
+
 def extraer_texto_pdf(pdf_bytes):
     """Extrae texto del PDF. Si está vacío usa OCR como fallback."""
     texto = ""
@@ -728,6 +771,13 @@ if st.session_state.paso >= 3:
 
             for nombre_fac, pdf_bytes in st.session_state.facturas_data:
                 tipo_fac, items_raw, texto = extraer_items_pdf(pdf_bytes)
+
+                # Para AESA con PDF escaneado sin texto, extraer del Excel de marcas
+                if cfg["cliente"] == "AESA" and len(items_raw) == 0 and st.session_state.marcas_data:
+                    m_nombre, m_bytes = st.session_state.marcas_data
+                    items_raw = extraer_items_aesa_desde_excel(m_bytes)
+                    tipo_fac = "aesa_excel"
+
                 st.markdown(f'<div class="info-box">📄 {nombre_fac} → {len(items_raw)} ítems detectados (tipo: {tipo_fac})</div>', unsafe_allow_html=True)
 
                 # Enriquecer ítems
@@ -808,7 +858,7 @@ if st.session_state.paso >= 4:
     alertas_marca = st.session_state.get("alertas_marca_global", [])
     alertas_usados = st.session_state.get("alertas_usados_global", [])
 
-    with st.expander("⚠️  VALIDACIÓN", expanded=(st.session_state.paso == 4)):
+    with st.expander("⚠️  VALIDACIÓN", expanded=True):
 
         hay_alertas = False
 
