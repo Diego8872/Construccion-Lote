@@ -92,7 +92,33 @@ div[data-baseweb="select"] > div {
     border-color: #2a2f3e;
     color: #f0f0f0;
 }
-.stRadio label { color: #c0c0c0; }
+.stRadio label { color: #c0c0c0 !important; }
+.stRadio > div { color: #c0c0c0 !important; }
+
+/* Expander fondo oscuro */
+div[data-testid="stExpander"] {
+    background-color: #1a1f2e !important;
+    border: 1px solid #2a2f3e !important;
+    border-radius: 6px !important;
+}
+div[data-testid="stExpander"] summary {
+    color: #f0f0f0 !important;
+}
+div[data-testid="stExpander"] > div > div {
+    background-color: #1a1f2e !important;
+}
+
+/* Labels e inputs */
+label { color: #c0c0c0 !important; }
+.stTextInput label { color: #c0c0c0 !important; }
+.stSelectbox label { color: #c0c0c0 !important; }
+.stFileUploader label { color: #c0c0c0 !important; }
+.stTextInput input {
+    background-color: #1a1f2e !important;
+    color: #f0f0f0 !important;
+    border-color: #2a2f3e !important;
+}
+p, span, div { color: #c0c0c0; }
 </style>
 """, unsafe_allow_html=True)
 
