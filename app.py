@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import json
 import pandas as pd
 import openpyxl
 import xlrd
@@ -478,47 +479,87 @@ def extraer_items_aesa_desde_excel(marcas_bytes):
         pass
     return items
 
+def extraer_items_groq_vision(pdf_bytes):
+    """Usa Groq Vision para extraer ítems de PDFs escaneados directamente como JSON."""
+    try:
+        from pdf2image import convert_from_bytes
+        from groq import Groq
+        groq_key = st.secrets.get("GROQ_API_KEY", "")
+        if not groq_key:
+            return []
+        client = Groq(api_key=groq_key)
+        images = convert_from_bytes(pdf_bytes, dpi=200)
+        todos_items = []
+
+        prompt = """Analizá esta factura comercial y extraé SOLO los ítems de la tabla de productos.
+Para cada ítem retorná un objeto JSON con estos campos exactos:
+- codigo: el código de material o REFI CLI (ej: O__CAP01331691, F__BL_04294047)
+- descripcion: descripción del producto
+- cantidad: número (ej: 4, 16, 20)
+- unidad: unidad de medida (PC, KG, MT, G, L)
+- peso_neto: peso neto en KG (número)
+- unitario: precio unitario (número)
+- total: precio total (número)
+- origen: país de origen (ej: BRASIL, USA)
+
+Retorná ÚNICAMENTE un array JSON válido, sin markdown, sin texto adicional.
+Ejemplo: [{"codigo":"O__CAP01331691","descripcion":"CAP 3000","cantidad":4,"unidad":"PC","peso_neto":0.52,"unitario":11.42,"total":45.68,"origen":"BRASIL"}]"""
+
+        for img in images:
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=90)
+            img_b64 = base64.b64encode(buf.getvalue()).decode()
+            response = client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}},
+                        {"type": "text", "text": prompt}
+                    ]
+                }],
+                max_tokens=3000
+            )
+            raw = response.choices[0].message.content.strip()
+            # Limpiar posible markdown
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            items_json = json.loads(raw)
+            for it in items_json:
+                todos_items.append({
+                    "codigo": str(it.get("codigo", "")).strip(),
+                    "descripcion": str(it.get("descripcion", "")).strip(),
+                    "cantidad": float(it.get("cantidad", 0)),
+                    "unidad_cod": get_codigo_unidad(str(it.get("unidad", "PC"))),
+                    "unidad_raw": str(it.get("unidad", "PC")).upper(),
+                    "peso_neto": float(it.get("peso_neto", 0)),
+                    "unitario": float(it.get("unitario", 0)),
+                    "total": float(it.get("total", 0)),
+                    "origen": get_codigo_pais(str(it.get("origen", "BRASIL"))) or 203,
+                    "procedencia": get_codigo_pais(str(it.get("origen", "BRASIL"))) or 203,
+                    "moneda": "USD",
+                })
+        return todos_items
+    except Exception as e:
+        return []
+
 def extraer_texto_pdf(pdf_bytes):
-    """Extrae texto del PDF. Si está vacío usa Groq Vision como fallback."""
+    """Extrae texto del PDF. Si está vacío retorna string vacío (se usará Groq Vision directamente)."""
     texto = ""
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
             t = page.extract_text()
             if t:
                 texto += t + "\n"
-    # Si no hay texto suficiente, usar Groq Vision
-    if len(texto.strip()) < 50:
-        try:
-            from pdf2image import convert_from_bytes
-            from groq import Groq
-            groq_key = st.secrets.get("GROQ_API_KEY", "")
-            if not groq_key:
-                return texto
-            client = Groq(api_key=groq_key)
-            images = convert_from_bytes(pdf_bytes, dpi=200)
-            for img in images:
-                buf = io.BytesIO()
-                img.save(buf, format="JPEG", quality=90)
-                img_b64 = base64.b64encode(buf.getvalue()).decode()
-                response = client.chat.completions.create(
-                    model="meta-llama/llama-4-scout-17b-16e-instruct",
-                    messages=[{
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}},
-                            {"type": "text", "text": "Transcribí el texto completo de esta factura comercial, respetando la estructura de las tablas. Incluí todos los números, códigos y descripciones exactamente como aparecen."}
-                        ]
-                    }],
-                    max_tokens=4000
-                )
-                texto += response.choices[0].message.content + "\n"
-        except Exception as e:
-            pass
     return texto
 
 def extraer_items_pdf(pdf_bytes, proveedor_detectado=None):
     """Extrae texto del PDF y detecta el tipo de factura."""
     texto = extraer_texto_pdf(pdf_bytes)
+
+    # Si no hay texto → PDF escaneado → usar Groq Vision directamente
+    if len(texto.strip()) < 50:
+        items = extraer_items_groq_vision(pdf_bytes)
+        return "escaneado_vision", items, ""
 
     # Detectar tipo de factura
     if "REFI CLI" in texto or "HCI" in texto.upper():
@@ -796,6 +837,10 @@ if st.session_state.paso >= 3:
                     tipo_fac = "aesa_excel"
 
                 st.markdown(f'<div class="info-box">📄 {nombre_fac} → {len(items_raw)} ítems detectados (tipo: {tipo_fac})</div>', unsafe_allow_html=True)
+                if items_raw:
+                    with st.expander(f"Ver ítems detectados ({len(items_raw)})"):
+                        for it in items_raw:
+                            st.write(f"`{it.get('codigo')}` | {str(it.get('descripcion',''))[:50]} | cant: {it.get('cantidad')} | total: {it.get('total')}")
 
                 # Enriquecer ítems
                 items_enriquecidos = []
