@@ -4,3 +4,5 @@ openpyxl
 xlrd
 xlutils
 pdfplumber
+pytesseract
+pdf2image
