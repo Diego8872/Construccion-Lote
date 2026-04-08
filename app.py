@@ -28,6 +28,10 @@ h1, h2, h3 { font-family: 'IBM Plex Mono', monospace; color: #f0f0f0; }
 .stButton > button:hover { background-color: #ffe033; color: #0f1117; }
 div[data-baseweb="select"] > div { background-color: #1a1f2e; border-color: #2a2f3e; color: #f0f0f0; }
 .stRadio label { color: #c0c0c0 !important; }
+.stRadio > div { color: #c0c0c0 !important; }
+[data-testid="stToolbar"] { visibility: hidden !important; }
+[data-testid="stDecoration"] { display: none !important; }
+a[href*="github.com"] { display: none !important; }
 div[data-testid="stExpander"] { background-color: #1a1f2e !important; border: 1px solid #2a2f3e !important; border-radius: 6px !important; }
 div[data-testid="stExpander"] summary { color: #f0f0f0 !important; }
 div[data-testid="stExpander"] > div > div { background-color: #1a1f2e !important; }
@@ -38,27 +42,35 @@ p, span, div { color: #c0c0c0; }
 """, unsafe_allow_html=True)
 
 PAISES = {
-    "BRASIL": 203, "BRAZIL": 203, "ESTADOS UNIDOS": 212, "USA": 212, "UNITED STATES": 212,
-    "REINO UNIDO": 426, "UNITED KINGDOM": 426, "UK": 426, "ALEMANIA": 438, "GERMANY": 438,
-    "ITALIA": 417, "ITALY": 417, "AUSTRIA": 405, "SUECIA": 429, "SWEDEN": 429,
-    "NORUEGA": 422, "NORWAY": 422, "FINLANDIA": 411, "FINLAND": 411,
-    "REPUBLICA CHECA": 451, "CZECH REPUBLIC": 451, "TAIWAN": 313, "CHINA": 310, "VIETNAM": 337,
-    "COREA DEL SUR": 309, "SOUTH KOREA": 309, "JAPON": 320, "JAPAN": 320, "INDIA": 315,
-    "SUIZA": 430, "SWITZERLAND": 430, "PAISES BAJOS": 423, "NETHERLANDS": 423,
+    "BRASIL": 203, "BRAZIL": 203, "ESTADOS UNIDOS": 212, "USA": 212, "UNITED STATES": 212, "US": 212,
+    "REINO UNIDO": 426, "UNITED KINGDOM": 426, "UK": 426, "GREAT BRITAIN": 426,
+    "ALEMANIA": 438, "GERMANY": 438, "DEUTSCHLAND": 438, "ITALIA": 417, "ITALY": 417, "AUSTRIA": 405,
+    "SUECIA": 429, "SWEDEN": 429, "NORUEGA": 422, "NORWAY": 422, "FINLANDIA": 411, "FINLAND": 411,
+    "REPUBLICA CHECA": 451, "REP. CHECA": 451, "CZECH REPUBLIC": 451, "CZ": 451,
+    "TAIWAN": 313, "CHINA": 310, "VIETNAM": 337,
+    "COREA DEL SUR": 309, "SOUTH KOREA": 309, "KOREA": 309,
+    "JAPON": 320, "JAPAN": 320, "INDIA": 315, "SUIZA": 430, "SWITZERLAND": 430,
+    "PAISES BAJOS": 423, "NETHERLANDS": 423, "HOLLAND": 423,
     "FRANCE": 412, "FRANCIA": 412, "ESPAÑA": 410, "SPAIN": 410, "BELGICA": 406, "BELGIUM": 406,
     "CANADA": 204, "MEXICO": 218, "MÉXICO": 218, "ARGENTINA": 200, "CHILE": 208,
-    "PERU": 222, "COLOMBIA": 205, "SINGAPORE": 333, "MALAYSIA": 326, "INDONESIA": 316,
-    "THAILAND": 335, "TURQUIA": 436, "TURKEY": 436, "ISRAEL": 319, "SUDAFRICA": 159,
-    "AUSTRALIA": 501, "NUEVA ZELANDA": 504, "POLONIA": 424, "POLAND": 424,
-    "HUNGRIA": 414, "RUMANIA": 427, "BULGARIA": 407, "RUSIA": 444, "UKRAINE": 445,
-    "PORTUGAL": 425, "GRECIA": 413, "LUXEMBURGO": 419, "IRLANDA": 415, "DINAMARCA": 409,
-    "HONG KONG": 341,
+    "PERU": 222, "PERÚ": 222, "COLOMBIA": 205, "SINGAPORE": 333, "SINGAPUR": 333,
+    "MALAYSIA": 326, "MALASIA": 326, "INDONESIA": 316, "THAILAND": 335, "TAILANDIA": 335,
+    "TURQUIA": 436, "TURKEY": 436, "ISRAEL": 319, "SUDAFRICA": 159, "SOUTH AFRICA": 159,
+    "AUSTRALIA": 501, "NUEVA ZELANDA": 504, "NEW ZEALAND": 504,
+    "POLONIA": 424, "POLAND": 424, "HUNGRIA": 414, "HUNGARY": 414, "RUMANIA": 427, "ROMANIA": 427,
+    "BULGARIA": 407, "CROACIA": 447, "CROATIA": 447, "ESLOVAQUIA": 448, "SLOVAKIA": 448,
+    "ESLOVENIA": 449, "SLOVENIA": 449, "RUSIA": 444, "RUSSIA": 444, "UCRANIA": 445, "UKRAINE": 445,
+    "PORTUGAL": 425, "GRECIA": 413, "GREECE": 413, "LUXEMBURGO": 419, "LUXEMBOURG": 419,
+    "IRLANDA": 415, "IRELAND": 415, "DINAMARCA": 409, "DENMARK": 409, "HONG KONG": 341,
 }
 
 UNIDAD_CME = {
-    "KG": 1, "KILOGRAM": 1, "MT": 2, "M": 2, "M2": 3, "M3": 4,
-    "L": 5, "LT": 5, "LITRO": 5, "PC": 7, "UNI": 7, "UNIDAD": 7, "PCS": 7, "UN": 7,
-    "PAR": 8, "DOC": 9, "G": 14, "GR": 14, "GRAMO": 14, "TON": 29, "ML": 47,
+    "KG": 1, "KILOGRAM": 1, "KILOGRAMO": 1, "MT": 2, "M": 2, "METRO": 2, "METROS": 2,
+    "M2": 3, "M²": 3, "M3": 4, "M³": 4, "L": 5, "LT": 5, "LITRO": 5, "LITROS": 5,
+    "PC": 7, "UNI": 7, "UNIDAD": 7, "UNIT": 7, "PCS": 7, "UN": 7,
+    "PAR": 8, "PAIR": 8, "DOC": 9, "DOCENA": 9,
+    "G": 14, "GR": 14, "GRAMO": 14, "GRAMOS": 14, "GRAM": 14,
+    "TON": 29, "TONELADA": 29, "ML": 47, "MILILITRO": 47,
 }
 
 UNIDAD_SIDOM = {
@@ -84,19 +96,18 @@ def limpiar_numero(texto):
         s = str(texto).strip()
         if ',' in s and '.' in s:
             s = s.replace('.','').replace(',','.') if s.rfind(',') > s.rfind('.') else s.replace(',','')
-        elif ',' in s:
-            s = s.replace(',','.')
+        elif ',' in s: s = s.replace(',','.')
         return float(s)
     except: return 0.0
 
 def extraer_items_natura(texto_pdf):
     """
-    Soporta formato con y sin campo VENTA:
-      50293720 1.050,000 KG descripcion...        (sin VENTA)
-      50391678 118997 828 PC descripcion...        (con VENTA - FIX)
+    FIX: campo VENTA opcional con (?:\\d+\\s+)?
+    Soporta:
+      50293720 1.050,000 KG descripcion...     (sin VENTA)
+      50391678 118997 828 PC descripcion...    (con VENTA)
     """
     items = []
-    # FIX: (?:\d+\s+)? hace el campo VENTA opcional
     patron = re.compile(
         r'^(\d{5,8})\s+(?:\d+\s+)?([\d.,]+)\s+(KG|G|PC|MT|L|LT|M)\s+(.+?)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s*$',
         re.IGNORECASE
@@ -188,20 +199,24 @@ def extraer_items_groq_vision(pdf_bytes):
         if not groq_key: return []
         client = Groq(api_key=groq_key)
         images = convert_from_bytes(pdf_bytes, dpi=200)
-        todos = []
-        prompt = "Extraé los ítems de esta factura. Retorná ÚNICAMENTE un array JSON con campos: codigo, descripcion, cantidad, unidad (PC/KG/G/L), peso_neto, unitario, total, origen. Sin markdown."
+        todos_items = []
+        prompt = """Analizá esta factura comercial y extraé SOLO los ítems de la tabla de productos.
+Para cada ítem retorná un objeto JSON con estos campos exactos:
+- codigo, descripcion, cantidad, unidad (PC/KG/MT/G/L), peso_neto, unitario, total, origen
+Retorná ÚNICAMENTE un array JSON válido, sin markdown, sin texto adicional."""
         for img in images:
             buf = io.BytesIO()
             img.save(buf, format="JPEG", quality=90)
-            r = client.chat.completions.create(
+            img_b64 = base64.b64encode(buf.getvalue()).decode()
+            response = client.chat.completions.create(
                 model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=[{"role":"user","content":[
-                    {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode()}"}},
+                    {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{img_b64}"}},
                     {"type":"text","text":prompt}
                 ]}], max_tokens=3000)
-            raw = r.choices[0].message.content.strip().replace("```json","").replace("```","").strip()
+            raw = response.choices[0].message.content.strip().replace("```json","").replace("```","").strip()
             for it in json.loads(raw):
-                todos.append({
+                todos_items.append({
                     "codigo": str(it.get("codigo","")).strip(), "descripcion": str(it.get("descripcion","")).strip(),
                     "cantidad": float(it.get("cantidad",0)), "unidad_cod": get_codigo_unidad(str(it.get("unidad","PC"))),
                     "unidad_raw": str(it.get("unidad","PC")).upper(), "peso_neto": float(it.get("peso_neto",0)),
@@ -209,7 +224,7 @@ def extraer_items_groq_vision(pdf_bytes):
                     "origen": get_codigo_pais(str(it.get("origen","BRASIL"))) or 203,
                     "procedencia": get_codigo_pais(str(it.get("origen","BRASIL"))) or 203, "moneda": "USD",
                 })
-        return todos
+        return todos_items
     except: return []
 
 def extraer_texto_pdf(pdf_bytes):
@@ -269,8 +284,7 @@ def leer_marcas_aesa(marcas_file_bytes):
     return {}
 
 def generar_excel_cme(items, nombre_lote):
-    wb = openpyxl.Workbook()
-    ws = wb.active; ws.title = "Hoja1"
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Hoja1"
     ws.append(["","Articulo","Descripcion","NCM","Cantidad","Unitario","Total","Origen","Procedencia","Unidad de Venta","Marca","Modelo","PN","Marca/Modelo/Otro"])
     for item in items:
         ws.append(["", item.get("codigo",""), item.get("descripcion",""), item.get("ncm","SIN NCM"),
@@ -281,7 +295,14 @@ def generar_excel_cme(items, nombre_lote):
     return buf
 
 def generar_excel_sidom(items, nombre_lote):
-    template_path = os.path.join(os.path.dirname(__file__), "Lote_SIDOM.xlsx")
+    posibles = [
+        os.path.join(os.path.dirname(__file__), "Lote_SIDOM.xlsx"),
+        os.path.join(os.path.dirname(__file__), "..", "Lote_SIDOM.xlsx"),
+        "Lote_SIDOM.xlsx",
+    ]
+    template_path = next((p for p in posibles if os.path.exists(p)), None)
+    if not template_path:
+        raise FileNotFoundError(f"No se encontró Lote_SIDOM.xlsx. Buscado en: {posibles}")
     wb = openpyxl.load_workbook(template_path); ws = wb.active
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
         for cell in row: cell.value = None
@@ -306,6 +327,7 @@ st.markdown('<div class="titulo-app">📦 CONSTRUCCIÓN DE LOTE</div>', unsafe_a
 if "paso" not in st.session_state: st.session_state.paso = 1
 if "config" not in st.session_state: st.session_state.config = {}
 if "items" not in st.session_state: st.session_state.items = []
+if "alertas_marca" not in st.session_state: st.session_state.alertas_marca = []
 
 # PASO 1
 with st.expander("⚙️  CONFIGURACIÓN", expanded=(st.session_state.paso == 1)):
@@ -316,14 +338,17 @@ with st.expander("⚙️  CONFIGURACIÓN", expanded=(st.session_state.paso == 1)
         st.markdown('<div class="paso-header">02 — Sistema</div>', unsafe_allow_html=True)
         sistema = st.radio("Sistema de despacho", ["CME", "SIDOM"], horizontal=True, key="sistema")
         st.markdown('<div class="paso-header">03 — Cliente</div>', unsafe_allow_html=True)
-        cliente = st.selectbox("Cliente", ["Natura","AESA","Otro"] if sistema=="CME" else ["Genérico","Otro"], key="cliente_cme" if sistema=="CME" else "cliente_sidom")
+        if sistema == "CME":
+            cliente = st.selectbox("Cliente", ["Natura", "AESA", "Otro"], key="cliente_cme")
+        else:
+            cliente = st.selectbox("Cliente", ["Genérico", "Otro"], key="cliente_sidom")
     with col2:
         tipo_ref = None
         if sistema == "CME" and cliente == "Natura":
             st.markdown('<div class="paso-header">04 — Tipo de Referencia</div>', unsafe_allow_html=True)
-            tipo_ref = st.radio("Tipo de referencia", ["ARG","Otro"], horizontal=True, key="tipo_ref")
+            tipo_ref = st.radio("Tipo de referencia", ["ARG", "Otro"], horizontal=True, key="tipo_ref")
         st.markdown('<div class="paso-header">05 — ¿Ítems Usados?</div>', unsafe_allow_html=True)
-        tiene_usados = st.radio("¿Esta operación puede tener ítems usados?", ["No","Sí"], horizontal=True, key="tiene_usados")
+        tiene_usados = st.radio("¿Esta operación puede tener ítems usados?", ["No", "Sí"], horizontal=True, key="tiene_usados")
     if st.button("CONFIRMAR CONFIGURACIÓN →"):
         if not nro_ref: st.error("Ingresá el número de referencia")
         else:
@@ -335,18 +360,19 @@ if st.session_state.paso >= 2:
     cfg = st.session_state.config
     with st.expander("📁  ARCHIVOS", expanded=(st.session_state.paso == 2)):
         st.markdown(f'<div class="info-box">Sistema: <b>{cfg["sistema"]}</b> | Cliente: <b>{cfg["cliente"]}</b> | Referencia: <b>{cfg["nro_ref"]}</b></div>', unsafe_allow_html=True)
-        facturas  = st.file_uploader("Facturas PDF", type=["pdf"], accept_multiple_files=True, key="facturas")
-        ncm_file  = st.file_uploader("Excel de NCMs", type=["xlsx","xlsm","xls"], key="ncm_file")
+        facturas = st.file_uploader("Facturas PDF (una o más)", type=["pdf"], accept_multiple_files=True, key="facturas")
+        ncm_file = st.file_uploader("Excel de NCMs", type=["xlsx", "xlsm", "xls"], key="ncm_file")
         marcas_file = None
         if cfg["cliente"] == "AESA":
-            marcas_file = st.file_uploader("Excel de Marcas (AESA)", type=["xlsx","xlsm","xls"], key="marcas_file")
+            marcas_file = st.file_uploader("Excel de Marcas (AESA - solapa Pos)", type=["xlsx", "xlsm", "xls"], key="marcas_file")
         modo_excel = "único"
         if facturas and len(facturas) > 1:
-            sel = st.radio("Modo", ["Un Excel por factura","Un solo Excel con todas"], key="modo_excel")
-            modo_excel = "por_factura" if "por factura" in sel else "único"
+            st.markdown('<div class="paso-header">¿Cómo generar el Excel?</div>', unsafe_allow_html=True)
+            modo_excel_sel = st.radio("Modo de generación", ["Un Excel por factura", "Un solo Excel con todas"], key="modo_excel")
+            modo_excel = "por_factura" if "por factura" in modo_excel_sel else "único"
         if facturas and ncm_file:
             if cfg["cliente"] == "AESA" and not marcas_file:
-                st.warning("⚠️ Falta Excel de Marcas para AESA")
+                st.warning("⚠️ Falta el Excel de Marcas para AESA")
             elif st.button("PROCESAR FACTURAS →"):
                 st.session_state.paso = 3
                 st.session_state.config["modo_excel"] = modo_excel
@@ -355,7 +381,7 @@ if st.session_state.paso >= 2:
                 st.session_state.marcas_data = (marcas_file.name, marcas_file.read()) if marcas_file else None
                 st.rerun()
 
-# PASO 3 — FIX delay: placeholder.empty() antes de rerun
+# PASO 3 — FIX delay: placeholder.empty() antes del rerun
 if st.session_state.paso >= 3:
     cfg = st.session_state.config
     with st.expander("⚙️  PROCESAMIENTO", expanded=(st.session_state.paso == 3)):
@@ -376,11 +402,11 @@ if st.session_state.paso >= 3:
                     if cfg["cliente"] == "AESA" and len(items_raw) == 0 and st.session_state.marcas_data:
                         _, m_bytes = st.session_state.marcas_data
                         items_raw = extraer_items_aesa_desde_excel(m_bytes); tipo_fac = "aesa_excel"
-                    st.markdown(f'<div class="info-box">📄 {nombre_fac} → {len(items_raw)} ítems (tipo: {tipo_fac})</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-box">📄 {nombre_fac} → {len(items_raw)} ítems detectados (tipo: {tipo_fac})</div>', unsafe_allow_html=True)
                     if items_raw:
-                        with st.expander(f"Ver ítems ({len(items_raw)})"):
+                        with st.expander(f"Ver ítems detectados ({len(items_raw)})"):
                             for it in items_raw:
-                                st.write(f"`{it.get('codigo')}` | {str(it.get('descripcion',''))[:50]} | {it.get('cantidad')} | {it.get('total')}")
+                                st.write(f"`{it.get('codigo')}` | {str(it.get('descripcion',''))[:50]} | cant: {it.get('cantidad')} | total: {it.get('total')}")
                     items_enriquecidos = []; alertas_marca = []; alertas_usados = []
                     for item in items_raw:
                         cod = item["codigo"]
@@ -400,14 +426,16 @@ if st.session_state.paso >= 3:
                         else:
                             item["marca"] = ""; item["marca_modelo_otro"] = ""
                         item["estado"] = "2 - NUEVO SIN USO IMPORTADO"
-                        if cfg["tiene_usados"] and any(p in item["descripcion"].lower() for p in ["used","usad","reman","recondition","rebuilt","gebraucht"]):
-                            item["estado"] = "4 - USADO IMPORTADO, INCL. REACOND"; alertas_usados.append(item)
+                        if cfg["tiene_usados"]:
+                            desc_lower = item["descripcion"].lower()
+                            if any(p in desc_lower for p in ["used","usad","reman","recondition","rebuilt","gebraucht"]):
+                                item["estado"] = "4 - USADO IMPORTADO, INCL. REACOND"; alertas_usados.append(item)
                         item["origen_nombre"] = PAISES_INV.get(item.get("origen"), str(item.get("origen","")))
                         items_enriquecidos.append(item)
                     facturas_items[nombre_fac] = {"items":items_enriquecidos,"alertas_marca":alertas_marca,"alertas_usados":alertas_usados}
                     todos_items.extend(items_enriquecidos)
 
-            # FIX: limpiar antes del rerun para evitar flash de contenido anterior
+            # FIX: limpiar antes del rerun para evitar flash
             placeholder.empty()
 
             st.session_state.todos_items = todos_items
@@ -426,25 +454,28 @@ if st.session_state.paso >= 4:
         hay_alertas = False
         if alertas_marca:
             hay_alertas = True
-            st.markdown(f'<div class="alerta-box">⚠️ {len(alertas_marca)} ítems sin marca</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="alerta-box">⚠️ {len(alertas_marca)} ítems sin marca detectada — completar antes de generar</div>', unsafe_allow_html=True)
             for item in alertas_marca:
-                c1, c2 = st.columns([3,1])
-                with c1: st.markdown(f'`{item["codigo"]}` — {item["descripcion"][:80]}')
-                with c2:
+                col1, col2 = st.columns([3,1])
+                with col1: st.markdown(f'`{item["codigo"]}` — {item["descripcion"][:80]}')
+                with col2:
                     opciones = ["natura","avon","sin marca"] if cfg["cliente"]=="Natura" else ["SIN MARCA"]
                     item["marca"] = st.selectbox("Marca", opciones, key=f"marca_sel_{item['codigo']}_{id(item)}")
                     if cfg["cliente"]=="Natura": item["marca_modelo_otro"] = item["codigo"]
         if alertas_usados:
             hay_alertas = True
-            st.markdown(f'<div class="alerta-box">⚠️ {len(alertas_usados)} ítems posiblemente USADOS</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="alerta-box">⚠️ {len(alertas_usados)} ítems detectados como posiblemente USADOS</div>', unsafe_allow_html=True)
             for item in alertas_usados:
-                c1, c2 = st.columns([3,1])
-                with c1: st.markdown(f'`{item["codigo"]}` — {item["descripcion"][:80]}')
-                with c2: item["estado"] = st.radio("Estado", ["2 - NUEVO SIN USO IMPORTADO","4 - USADO IMPORTADO, INCL. REACOND"], key=f"estado_{item['codigo']}_{id(item)}")
+                col1, col2 = st.columns([3,1])
+                with col1: st.markdown(f'`{item["codigo"]}` — {item["descripcion"][:80]}')
+                with col2:
+                    item["estado"] = st.radio("Estado", ["2 - NUEVO SIN USO IMPORTADO","4 - USADO IMPORTADO, INCL. REACOND"],
+                                              key=f"estado_sel_{item['codigo']}_{id(item)}", horizontal=False)
         if cfg["tiene_usados"]:
             st.markdown("---")
+            st.markdown("**¿Hay algún ítem adicional que sea USADO y no fue detectado?**")
             todos_codigos = [it["codigo"] for it in st.session_state.todos_items]
-            usados_extra = st.multiselect("Ítems usados adicionales", options=todos_codigos, key="usados_extra")
+            usados_extra = st.multiselect("Seleccionar ítems usados adicionales", options=todos_codigos, key="usados_extra")
             for cod in usados_extra:
                 for item in st.session_state.todos_items:
                     if item["codigo"] == cod: item["estado"] = "4 - USADO IMPORTADO, INCL. REACOND"
@@ -463,12 +494,14 @@ if st.session_state.paso >= 5:
                 items = fac_data["items"]; nombre_archivo = f"Lote_{nro_ref}.xlsx"
                 buf = generar_excel_cme(items, nro_ref) if sistema=="CME" else generar_excel_sidom(items, nro_ref)
                 st.markdown(f'<div class="ok-box">✅ {nombre_fac} → {len(items)} ítems</div>', unsafe_allow_html=True)
-                st.download_button(f"⬇️ Descargar {nombre_archivo}", data=buf, file_name=nombre_archivo, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"dl_{nombre_fac}")
+                st.download_button(f"⬇️ Descargar {nombre_archivo}", data=buf, file_name=nombre_archivo,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"dl_{nombre_fac}")
         else:
             todos = st.session_state.todos_items; nombre_archivo = f"Lote_{nro_ref}.xlsx"
             buf = generar_excel_cme(todos, nro_ref) if sistema=="CME" else generar_excel_sidom(todos, nro_ref)
-            st.markdown(f'<div class="ok-box">✅ {len(todos)} ítems → {nombre_archivo}</div>', unsafe_allow_html=True)
-            st.download_button(f"⬇️ Descargar {nombre_archivo}", data=buf, file_name=nombre_archivo, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="dl_unico")
+            st.markdown(f'<div class="ok-box">✅ {len(todos)} ítems procesados → {nombre_archivo}</div>', unsafe_allow_html=True)
+            st.download_button(f"⬇️ Descargar {nombre_archivo}", data=buf, file_name=nombre_archivo,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="dl_unico")
         if st.button("🔄 Nuevo Lote"):
             for key in list(st.session_state.keys()): del st.session_state[key]
             st.rerun()
