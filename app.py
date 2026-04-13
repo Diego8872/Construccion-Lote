@@ -528,11 +528,11 @@ Retorná ÚNICAMENTE un array JSON válido, sin markdown."""
                             items.append({
                                 "codigo": cod,
                                 "descripcion": str(it.get("descripcion","")).strip()[:60],
-                                "cantidad": float(it.get("cantidad",0)),
+                                "cantidad": limpiar_numero(it.get("cantidad",0)),
                                 "unidad_cod": 1, "unidad_raw": "KG",
-                                "peso_neto": float(it.get("cantidad",0)),
-                                "unitario": float(it.get("unitario",0)),
-                                "total": float(it.get("total",0)),
+                                "peso_neto": limpiar_numero(it.get("cantidad",0)),
+                                "unitario": limpiar_numero(it.get("unitario",0)),
+                                "total": limpiar_numero(it.get("total",0)),
                                 "origen": get_codigo_pais(str(it.get("origen",""))) or 0,
                                 "procedencia": 203, "moneda": "USD", "ncm": ncm,
                             })
