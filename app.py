@@ -438,6 +438,110 @@ def extraer_items_natura_muestras(texto_pdf):
             })
     return items
 
+
+def extraer_items_por_codigo(textos_pdf, ncm_dict):
+    """
+    Fallback genérico: busca cada código del Excel en el texto del PDF
+    y extrae números cercanos (cantidad, unitario, total).
+    Para códigos no encontrados activa Groq Vision.
+    """
+    texto_total = '\n'.join(textos_pdf)
+    lineas = texto_total.split('\n')
+    pat_numeros = re.compile(r'([\d.,]+)')
+
+    items = []
+    codigos_sin_match = []
+
+    for cod, ncm in ncm_dict.items():
+        if not cod or cod == 'nan': continue
+        encontrado = False
+        for i, l in enumerate(lineas):
+            if re.search(re.escape(cod), l, re.IGNORECASE):
+                # Extraer todos los números de la línea y líneas cercanas
+                numeros = []
+                for j in range(max(0,i-2), min(i+3, len(lineas))):
+                    for m in pat_numeros.finditer(lineas[j]):
+                        try:
+                            n = float(m.group().replace('.','').replace(',','.'))
+                            if n > 0: numeros.append(n)
+                        except: pass
+                # Origen cercano
+                origen = procedencia = None
+                for j in range(max(0,i-3), min(i+5, len(lineas))):
+                    lj = lineas[j].strip()
+                    if 'Country of origin' in lj or 'Origen' in lj:
+                        origen = get_codigo_pais(lj.split('-')[-1].split(':')[-1].strip())
+                    if 'Provenance' in lj or 'Procedencia' in lj:
+                        procedencia = get_codigo_pais(lj.split(':')[-1].strip())
+                # Tomar los últimos 3 números como cant, unit, total
+                cant = numeros[-3] if len(numeros) >= 3 else (numeros[0] if numeros else 0)
+                unit = numeros[-2] if len(numeros) >= 2 else 0
+                total = numeros[-1] if len(numeros) >= 1 else 0
+                items.append({
+                    "codigo": cod, "descripcion": l.strip()[:60],
+                    "cantidad": cant, "unidad_cod": 1, "unidad_raw": "KG",
+                    "peso_neto": cant, "unitario": unit, "total": total,
+                    "origen": origen or 0, "procedencia": procedencia or 203,
+                    "moneda": "USD", "ncm": ncm,
+                })
+                encontrado = True
+                break
+        if not encontrado:
+            codigos_sin_match.append(cod)
+
+    # Groq Vision para códigos no encontrados
+    if codigos_sin_match:
+        try:
+            from pdf2image import convert_from_bytes
+            from groq import Groq
+            groq_key = st.secrets.get("GROQ_API_KEY","")
+            if groq_key:
+                client = Groq(api_key=groq_key)
+                codigos_str = ", ".join(codigos_sin_match)
+                prompt = f"""Esta es una factura comercial. Buscá los siguientes códigos de material: {codigos_str}
+Para cada código encontrado retorná un JSON con:
+- codigo: el código buscado
+- descripcion: descripción del producto
+- cantidad: cantidad en KG o unidades
+- unitario: precio unitario
+- total: precio total
+- origen: país de origen
+Retorná ÚNICAMENTE un array JSON válido, sin markdown."""
+                # Usar primer PDF
+                for pdf_bytes_item in st.session_state.facturas_data[:1]:
+                    _, pdf_bytes = pdf_bytes_item
+                    images = convert_from_bytes(pdf_bytes, dpi=200)
+                    for img in images:
+                        buf = io.BytesIO()
+                        img.save(buf, format="JPEG", quality=90)
+                        img_b64 = base64.b64encode(buf.getvalue()).decode()
+                        response = client.chat.completions.create(
+                            model="meta-llama/llama-4-scout-17b-16e-instruct",
+                            messages=[{"role":"user","content":[
+                                {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{img_b64}"}},
+                                {"type":"text","text":prompt}
+                            ]}], max_tokens=2000)
+                        raw = response.choices[0].message.content.strip().replace("```json","").replace("```","")
+                        for it in json.loads(raw):
+                            cod = str(it.get("codigo","")).strip()
+                            ncm = ncm_dict.get(cod, "SIN NCM")
+                            items.append({
+                                "codigo": cod,
+                                "descripcion": str(it.get("descripcion","")).strip()[:60],
+                                "cantidad": float(it.get("cantidad",0)),
+                                "unidad_cod": 1, "unidad_raw": "KG",
+                                "peso_neto": float(it.get("cantidad",0)),
+                                "unitario": float(it.get("unitario",0)),
+                                "total": float(it.get("total",0)),
+                                "origen": get_codigo_pais(str(it.get("origen",""))) or 0,
+                                "procedencia": 203, "moneda": "USD", "ncm": ncm,
+                            })
+        except Exception as e:
+            st.warning(f"Groq Vision no disponible: {e}")
+
+    alertas = [cod for cod, ncm in ncm_dict.items() if cod not in [i["codigo"] for i in items]]
+    return items, alertas
+
 def extraer_items_aesa_desde_excel(marcas_bytes):
     items = []
     try:
@@ -747,13 +851,38 @@ if st.session_state.paso >= 3:
                 usar_origenes_excel = cfg["cliente"] == "Natura" and cfg["tipo_ref"] in ["ARG", "Producto Terminado / Ind. e Comércio"]
                 natura_otros = cfg["cliente"] == "Natura" and cfg["tipo_ref"] == "Otro"
 
-                # Para Natura+Otros: lógica Excel-driven (todos los PDFs juntos)
+                # Para Natura+Otros: detectar formato y usar parser correcto
                 if natura_otros:
                     textos_pdf = []
                     for nombre_fac, pdf_bytes in st.session_state.facturas_data:
                         texto = extraer_texto_pdf(pdf_bytes)
                         textos_pdf.append(texto)
-                    items_otros, alertas_otros = extraer_items_natura_otros(textos_pdf, ncm_dict)
+                    # Probar todos los parsers en orden, usar el que devuelva ítems
+                    def enriquecer_ncm(items_raw):
+                        alertas = []
+                        for item in items_raw:
+                            item["ncm"] = ncm_dict.get(item["codigo"], "SIN NCM")
+                            if item["ncm"] == "SIN NCM": alertas.append(str(item["codigo"]))
+                        return items_raw, alertas
+
+                    items_otros = []; alertas_otros = []
+                    # 1. Vidraria
+                    items_raw = []
+                    for t in textos_pdf: items_raw.extend(extraer_items_vidraria(t))
+                    if items_raw:
+                        items_otros, alertas_otros = enriquecer_ncm(items_raw)
+                    # 2. Natura muestras
+                    if not items_otros:
+                        items_raw = []
+                        for t in textos_pdf: items_raw.extend(extraer_items_natura_muestras(t))
+                        if items_raw:
+                            items_otros, alertas_otros = enriquecer_ncm(items_raw)
+                    # 3. Ashland (Excel-driven)
+                    if not items_otros:
+                        items_otros, alertas_otros = extraer_items_natura_otros(textos_pdf, ncm_dict)
+                    # 4. Genérico: búsqueda por código en texto + Groq Vision fallback
+                    if not items_otros:
+                        items_otros, alertas_otros = extraer_items_por_codigo(textos_pdf, ncm_dict)
                     st.markdown(f'<div class="info-box">📄 {len(st.session_state.facturas_data)} factura(s) → {len(items_otros)} ítems detectados (tipo: natura_otros)</div>', unsafe_allow_html=True)
                     if alertas_otros:
                         st.markdown(f'<div class="alerta-box">⚠️ {len(alertas_otros)} códigos del Excel no encontrados en las facturas: {", ".join(str(a) for a in alertas_otros)}</div>', unsafe_allow_html=True)
