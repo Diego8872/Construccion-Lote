@@ -866,11 +866,18 @@ if st.session_state.paso >= 3:
                         return items_raw, alertas
 
                     items_otros = []; alertas_otros = []
+
+                    # 0. Si el PDF está escaneado (sin texto) → Groq Vision directo
+                    texto_total_otros = '\n'.join(textos_pdf)
+                    if len(texto_total_otros.strip()) < 50:
+                        items_otros, alertas_otros = extraer_items_por_codigo(textos_pdf, ncm_dict)
+
                     # 1. Vidraria
-                    items_raw = []
-                    for t in textos_pdf: items_raw.extend(extraer_items_vidraria(t))
-                    if items_raw:
-                        items_otros, alertas_otros = enriquecer_ncm(items_raw)
+                    if not items_otros:
+                        items_raw = []
+                        for t in textos_pdf: items_raw.extend(extraer_items_vidraria(t))
+                        if items_raw:
+                            items_otros, alertas_otros = enriquecer_ncm(items_raw)
                     # 2. Natura muestras
                     if not items_otros:
                         items_raw = []
