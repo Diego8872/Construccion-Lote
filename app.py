@@ -374,6 +374,70 @@ def extraer_items_natura_otros(textos_pdf, ncm_dict):
 
     return all_items, alertas
 
+
+def extraer_items_vidraria(texto_pdf):
+    """
+    Parser para facturas Vidraria Anchieta.
+    Formatos:
+      "52.800 C2188131 NCM - 7010.90.90 BRAZIL USD 0,29705 USD 15.684,24"
+      "16.590 C2318281 BRAZIL USD 0,30441 USD 5.050,16"
+    Unidad: PC (unidades de vidrio)
+    """
+    lineas = texto_pdf.split('\n')
+    pat1 = re.compile(r'^([\d.,]+)\s+(C\w+)\s+NCM\s*[-\u2013]\s*[\d.]+\s+(\w+)\s+USD\s+([\d.,]+)\s+USD\s+([\d.,]+)\s*$')
+    pat2 = re.compile(r'^([\d.,]+)\s+(C\w+)\s+(\w+)\s+USD\s+([\d.,]+)\s+USD\s+([\d.,]+)\s*$')
+    items = []
+    for l in lineas:
+        l = l.strip()
+        for pat, gi_origen, gi_unit, gi_total in [(pat1, 3, 4, 5), (pat2, 3, 4, 5)]:
+            m = pat.match(l)
+            if m:
+                cant_s = m.group(1)
+                cant = float(cant_s.replace('.','')) if '.' in cant_s and len(cant_s.split('.')[-1])==3 else limpiar_numero(cant_s)
+                origen = get_codigo_pais(m.group(gi_origen)) or 203
+                items.append({
+                    "codigo": m.group(2), "descripcion": m.group(2),
+                    "cantidad": cant, "unidad_cod": 7, "unidad_raw": "PC",
+                    "peso_neto": 0, "unitario": limpiar_numero(m.group(gi_unit)),
+                    "total": limpiar_numero(m.group(gi_total)),
+                    "origen": origen, "procedencia": origen, "moneda": "USD",
+                })
+                break
+    return items
+
+
+def extraer_items_natura_muestras(texto_pdf):
+    """
+    Parser para facturas Natura Brasil de muestras (ARG-XXXXX).
+    Formato: "1-91077 0,049 3307.20.10 FAR AWAY DES EAU PERF BTS F Desodorante 0,049 8,45 0,41"
+    Columnas: MATERIAL_CODE | QTY_KG | NCM_PDF | DESCRIPTION | DESCRIÇÃO | NET_WEIGHT | UNIT_PRICE | TOTAL
+    """
+    pat = re.compile(r'^(1-\d+)\s+([\d,]+)\s+[\d.]+\s+(.+?)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s*$')
+    # Buscar origen en el PDF
+    origen = 203  # default Brasil
+    lineas = texto_pdf.split('\n')
+    for i, l in enumerate(lineas):
+        if 'ORIGIN COUNTRY' in l.upper() and i+1 < len(lineas):
+            cod = get_codigo_pais(lineas[i+1].strip())
+            if cod: origen = cod; break
+    items = []
+    for l in lineas:
+        l = l.strip()
+        if not l.startswith('1-'): continue
+        m = pat.match(l)
+        if m:
+            items.append({
+                "codigo": m.group(1),
+                "descripcion": m.group(3).strip()[:60],
+                "cantidad": limpiar_numero(m.group(2)),
+                "unidad_cod": 1, "unidad_raw": "KG",
+                "peso_neto": limpiar_numero(m.group(4)),
+                "unitario": limpiar_numero(m.group(5)),
+                "total": limpiar_numero(m.group(6)),
+                "origen": origen, "procedencia": origen, "moneda": "USD",
+            })
+    return items
+
 def extraer_items_aesa_desde_excel(marcas_bytes):
     items = []
     try:
@@ -455,6 +519,10 @@ def extraer_items_pdf(pdf_bytes, proveedor_detectado=None):
         return "hci", extraer_items_hci(texto), texto
     elif "Ashland" in texto or "ASHLAND" in texto:
         return "ashland", extraer_items_ashland(texto), texto
+    elif "VIDRARIA" in texto.upper() or "Vidraria" in texto:
+        return "vidraria", extraer_items_vidraria(texto), texto
+    elif re.search(r'ARG-\d+', texto) and "MATERIAL" in texto and "SALES" in texto and "NCM" in texto:
+        return "natura_muestras", extraer_items_natura_muestras(texto), texto
     elif "Wärtsilä" in texto or "Wartsila" in texto:
         return "wartsila", extraer_items_wartsila(texto), texto
     elif "MATERIAL" in texto and "VENTA" in texto and "CANTIDAD" in texto and "Natura" in texto:
