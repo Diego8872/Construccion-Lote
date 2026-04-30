@@ -797,6 +797,7 @@ def generar_excel_cme(items, nombre_lote):
     wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Hoja1"
     ws.append(["","Articulo","Descripcion","NCM","Cantidad","Unitario","Total","Origen","Procedencia","Unidad de Venta","Marca","Modelo","PN","Marca/Modelo/Otro"])
     for item in items:
+        if not item.get("codigo") or str(item.get("codigo","")).strip() in ("", "nan"): continue
         ws.append(["", item.get("codigo",""), item.get("descripcion",""), item.get("ncm","SIN NCM"),
                    item.get("cantidad",0), item.get("unitario",0), item.get("total",0),
                    item.get("origen",""), item.get("procedencia",""), item.get("unidad_cod",7),
