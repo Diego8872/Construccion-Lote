@@ -732,9 +732,13 @@ def leer_ncm(ncm_file_bytes, nombre_archivo):
         # 4. AESA Clasificación - solapa Pos, header=4
         try:
             df = pd.read_excel(io.BytesIO(ncm_file_bytes), sheet_name="Pos", dtype=str, header=4)
-            df = df[df["Pos"].str.match(r"^\d+$", na=False)]
+            df = df[df["Pos"].str.match(r"^\d+$", na=False) & df["Código SAP del Material"].notna()]
             if "Código SAP del Material" in df.columns and "Pos. Aranc." in df.columns:
-                return dict(zip(df["Código SAP del Material"].astype(str).str.strip(), df["Pos. Aranc."].astype(str).str.strip()))
+                result = {k:v for k,v in zip(
+                    df["Código SAP del Material"].astype(str).str.strip(),
+                    df["Pos. Aranc."].astype(str).str.strip()
+                ) if k and k != 'nan' and v and v != 'nan'}
+                if result: return result
         except: pass
 
         # 5. Fallback universal
