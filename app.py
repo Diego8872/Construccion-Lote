@@ -575,7 +575,7 @@ def extraer_items_aesa_desde_excel(marcas_bytes):
         # Intentar header=4 primero (nuevo formato AESA), fallback a skiprows=3
         try:
             df = pd.read_excel(io.BytesIO(marcas_bytes), sheet_name="Pos", dtype=str, header=4)
-            df = df[df["Pos"].str.match(r"^\d+$", na=False)].copy()
+            df = df[df["Pos"].str.match(r"^\d+$", na=False) & df["Código SAP del Material"].notna()].copy()
         except:
             df = pd.read_excel(io.BytesIO(marcas_bytes), sheet_name="Pos", dtype=str, skiprows=3)
             df = df[df["Pos"].str.match(r"^\d+$", na=False)].copy()
@@ -772,7 +772,7 @@ def leer_marcas_aesa(marcas_file_bytes):
     try:
         try:
             df = pd.read_excel(io.BytesIO(marcas_file_bytes), sheet_name="Pos", dtype=str, header=4)
-            df = df[df["Pos"].str.match(r'^\d+$', na=False)].copy()
+            df = df[df["Pos"].str.match(r'^\d+$', na=False) & df["Código SAP del Material"].notna()].copy()
         except:
             df = pd.read_excel(io.BytesIO(marcas_file_bytes), sheet_name="Pos", dtype=str, skiprows=3)
             df = df[df["Pos"].str.match(r'^\d+$', na=False)].copy()
