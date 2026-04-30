@@ -582,7 +582,7 @@ def extraer_items_aesa_desde_excel(marcas_bytes):
         for _, row in df.iterrows():
             cod = str(row.get("Código SAP del Material","")).strip()
             cant = limpiar_numero(row.get("Cantidad",0))
-            if not cod or cant == 0: continue
+            if not cod or cod == "nan" or cant == 0: continue
             origen = get_codigo_pais(str(row.get("Origen","brasil")).strip()) or 203
             items.append({
                 "codigo": cod, "descripcion": str(row.get("Descripción","")).strip().replace("\n"," "),
@@ -779,7 +779,13 @@ def leer_marcas_aesa(marcas_file_bytes):
         col_marca = next((c for c in df.columns if "MARCA" in str(c).upper()), None)
         col_cod   = next((c for c in df.columns if "SAP" in str(c).upper() or "Código" in str(c)), None)
         if col_marca and col_cod:
-            return dict(zip(df[col_cod].str.strip(), df[col_marca].str.strip()))
+            result = {}
+            for _, row in df.iterrows():
+                cod = str(row.get(col_cod,"")).strip()
+                marca = str(row.get(col_marca,"")).strip()
+                if cod and cod != "nan" and marca and marca != "nan":
+                    result[cod] = marca
+            return result
     except: pass
     return {}
 
