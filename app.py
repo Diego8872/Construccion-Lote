@@ -713,9 +713,6 @@ def leer_ncm(ncm_file_bytes, nombre_archivo):
                     result[pn_clean] = pa
                     result[pn] = pa
             return result
-        cod_col = next((c for c in cols if "art" in str(c).lower() or "cod" in str(c).lower()), cols[0])
-        ncm_col = next((c for c in cols if "ncm" in str(c).lower()), cols[1])
-        return dict(zip(df[cod_col].astype(str).str.strip(), df[ncm_col].astype(str).str.strip()))
         # Fallback universal: escanear todas las solapas con múltiples headers
         try:
             xl = pd.ExcelFile(io.BytesIO(ncm_file_bytes))
@@ -739,8 +736,9 @@ def leer_ncm(ncm_file_bytes, nombre_archivo):
                                 return result
                     except: continue
         except: pass
-        st.warning("No se pudo detectar el formato del Excel de NCMs. Verificá que tenga columnas de código y NCM/posición arancelaria.")
-        return {}
+        cod_col = next((c for c in cols if "art" in str(c).lower() or "cod" in str(c).lower()), cols[0])
+        ncm_col = next((c for c in cols if "ncm" in str(c).lower()), cols[1])
+        return dict(zip(df[cod_col].astype(str).str.strip(), df[ncm_col].astype(str).str.strip()))
     except Exception as e:
         st.warning(f"Error leyendo NCMs: {e}")
         return {}
@@ -753,8 +751,7 @@ def leer_marcas_aesa(marcas_file_bytes):
         col_cod   = next((c for c in df.columns if "SAP" in str(c).upper() or "Código" in str(c)), None)
         if col_marca and col_cod:
             return dict(zip(df[col_cod].str.strip(), df[col_marca].str.strip()))
-    except Exception as e:
-        st.warning(f"Error leyendo marcas: {e}")
+    except: pass
     return {}
 
 def generar_excel_cme(items, nombre_lote):
