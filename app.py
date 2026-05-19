@@ -205,40 +205,34 @@ def extraer_items_hci(texto_pdf):
 
 def extraer_items_wartsila(texto_pdf):
     lineas = texto_pdf.split('\n')
-    pat_item   = re.compile(r'^(\d{6})\s+(\S+)\s+(.+)$')
-    pat_datos  = re.compile(r'^(\S+)\s+([\d.,]+)\s+PC\s+([\d.,]+)\s+EUR\s+[\d.,]+%\s+([\d.,]+)')
+    pat_item   = re.compile(r'^(\d{6})\s+(.+)$')
+    pat_datos  = re.compile(r'^(\w+)\s+([\d.,]+)\s+PC\s+([\d.,]+)\s+\w+\s+[\d.,]+%\s+([\d.,]+)')
     pat_origen = re.compile(r'^([A-Z]{2})\s+\d+\s+([\d.,]+)\s+KG')
     items = []
     i = 0
     while i < len(lineas):
         m1 = pat_item.match(lineas[i].strip())
-        if m1:
-            m2 = None
-            datos_idx = None
-            for k in range(i+1, min(i+4, len(lineas))):
-                m2 = pat_datos.match(lineas[k].strip())
-                if m2:
-                    datos_idx = k
-                    break
+        if m1 and i+1 < len(lineas):
+            m2 = pat_datos.match(lineas[i+1].strip())
             if m2:
-                codigo   = m1.group(2).strip()
-                desc     = m1.group(3).strip()
+                partes = m1.group(2).strip().split(None, 1)
+                codigo = partes[0]
+                desc   = partes[1] if len(partes) > 1 else partes[0]
                 cant     = limpiar_numero(m2.group(2))
                 unitario = limpiar_numero(m2.group(3))
                 total    = limpiar_numero(m2.group(4))
-                origen = 0; peso = 0.0
-                for j in range(datos_idx+1, min(datos_idx+6, len(lineas))):
+                origen_iso = None; peso = 0.0
+                for j in range(i+2, min(i+8, len(lineas))):
                     mo = pat_origen.match(lineas[j].strip())
-                    if mo:
-                        origen = get_codigo_pais(mo.group(1)) or 0
-                        peso   = limpiar_numero(mo.group(2))
-                        break
+                    if mo: origen_iso = mo.group(1); peso = limpiar_numero(mo.group(2)); break
+                origen = get_codigo_pais(origen_iso) or 0
                 items.append({
                     "codigo": codigo, "descripcion": desc,
                     "cantidad": cant, "unidad_cod": 7, "unidad_raw": "PC",
                     "peso_neto": peso, "unitario": unitario, "total": total,
                     "origen": origen, "procedencia": origen, "moneda": "EUR",
                 })
+                i += 2; continue
         i += 1
     return items
 
@@ -906,7 +900,6 @@ if st.session_state.paso >= 3:
                 else:
                     for nombre_fac, pdf_bytes in st.session_state.facturas_data:
                         tipo_fac, items_raw, texto = extraer_items_pdf(pdf_bytes)
-                        st.session_state.debug_texto = texto
                         if cfg["cliente"] == "AESA" and len(items_raw) == 0 and st.session_state.marcas_data:
                             _, m_bytes = st.session_state.marcas_data
                             items_raw = extraer_items_aesa_desde_excel(m_bytes); tipo_fac = "aesa_excel"
@@ -965,8 +958,6 @@ if st.session_state.paso >= 3:
                     todos_items.extend(items_enriquecidos)
             placeholder.empty()
             st.session_state.todos_items = todos_items
-            if st.session_state.get("debug_texto"):
-                st.text_area("🔍 texto crudo", st.session_state.debug_texto[:3000], height=300)
             st.session_state.facturas_items = facturas_items
             st.session_state.alertas_marca_global  = [i for fac in facturas_items.values() for i in fac["alertas_marca"]]
             st.session_state.alertas_usados_global = [i for fac in facturas_items.values() for i in fac["alertas_usados"]]
