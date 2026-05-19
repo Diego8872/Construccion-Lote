@@ -906,7 +906,7 @@ if st.session_state.paso >= 3:
                 else:
                     for nombre_fac, pdf_bytes in st.session_state.facturas_data:
                         tipo_fac, items_raw, texto = extraer_items_pdf(pdf_bytes)
-                        st.text_area("🔍 texto crudo (debug)", texto[:3000], height=300)
+                        st.session_state.debug_texto = texto
                         if cfg["cliente"] == "AESA" and len(items_raw) == 0 and st.session_state.marcas_data:
                             _, m_bytes = st.session_state.marcas_data
                             items_raw = extraer_items_aesa_desde_excel(m_bytes); tipo_fac = "aesa_excel"
@@ -965,6 +965,8 @@ if st.session_state.paso >= 3:
                     todos_items.extend(items_enriquecidos)
             placeholder.empty()
             st.session_state.todos_items = todos_items
+            if st.session_state.get("debug_texto"):
+                st.text_area("🔍 texto crudo", st.session_state.debug_texto[:3000], height=300)
             st.session_state.facturas_items = facturas_items
             st.session_state.alertas_marca_global  = [i for fac in facturas_items.values() for i in fac["alertas_marca"]]
             st.session_state.alertas_usados_global = [i for fac in facturas_items.values() for i in fac["alertas_usados"]]
