@@ -206,22 +206,28 @@ def extraer_items_hci(texto_pdf):
 def extraer_items_wartsila(texto_pdf):
     lineas = texto_pdf.split('\n')
     pat_item   = re.compile(r'^(\d{6})\s+(\S+)\s+(.+)$')
-    pat_datos  = re.compile(r'^\S+\s+([\d.,]+)\s+PC\s+([\d.,]+)\s+EUR\s+[\d.,]+%\s+([\d.,]+)')
+    pat_datos  = re.compile(r'^(\S+)\s+([\d.,]+)\s+PC\s+([\d.,]+)\s+EUR\s+[\d.,]+%\s+([\d.,]+)')
     pat_origen = re.compile(r'^([A-Z]{2})\s+\d+\s+([\d.,]+)\s+KG')
     items = []
     i = 0
     while i < len(lineas):
         m1 = pat_item.match(lineas[i].strip())
-        if m1 and i+1 < len(lineas):
-            m2 = pat_datos.match(lineas[i+1].strip())
+        if m1:
+            m2 = None
+            datos_idx = None
+            for k in range(i+1, min(i+4, len(lineas))):
+                m2 = pat_datos.match(lineas[k].strip())
+                if m2:
+                    datos_idx = k
+                    break
             if m2:
                 codigo   = m1.group(2).strip()
                 desc     = m1.group(3).strip()
-                cant     = limpiar_numero(m2.group(1))
-                unitario = limpiar_numero(m2.group(2))
-                total    = limpiar_numero(m2.group(3))
+                cant     = limpiar_numero(m2.group(2))
+                unitario = limpiar_numero(m2.group(3))
+                total    = limpiar_numero(m2.group(4))
                 origen = 0; peso = 0.0
-                for j in range(i+2, min(i+6, len(lineas))):
+                for j in range(datos_idx+1, min(datos_idx+6, len(lineas))):
                     mo = pat_origen.match(lineas[j].strip())
                     if mo:
                         origen = get_codigo_pais(mo.group(1)) or 0
@@ -233,7 +239,6 @@ def extraer_items_wartsila(texto_pdf):
                     "peso_neto": peso, "unitario": unitario, "total": total,
                     "origen": origen, "procedencia": origen, "moneda": "EUR",
                 })
-                i += 2; continue
         i += 1
     return items
 
