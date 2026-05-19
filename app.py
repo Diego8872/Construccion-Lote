@@ -906,6 +906,7 @@ if st.session_state.paso >= 3:
                 else:
                     for nombre_fac, pdf_bytes in st.session_state.facturas_data:
                         tipo_fac, items_raw, texto = extraer_items_pdf(pdf_bytes)
+                        st.text_area("🔍 texto crudo (debug)", texto[:3000], height=300)
                         if cfg["cliente"] == "AESA" and len(items_raw) == 0 and st.session_state.marcas_data:
                             _, m_bytes = st.session_state.marcas_data
                             items_raw = extraer_items_aesa_desde_excel(m_bytes); tipo_fac = "aesa_excel"
