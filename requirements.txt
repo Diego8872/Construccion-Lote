@@ -4,5 +4,5 @@ openpyxl
 xlrd
 xlutils
 pdfplumber
-pdf2image
+pymupdf
 groq
